@@ -6,7 +6,7 @@ Determines the frequency of Env glycosylation site combinations. The included da
 
 ## usage
 without pre-existing alignments:  
-`python glycan_finder.py -in [input] -ref [reference] -dir [alignment-directory] -pos [positives] -neg [negatives]`
+`python glycan_finder.py -in [input] -ref [reference] -dir [align-dir] -pos [positives] -neg [negatives]`
 
 with pre-existing alignments:  
 `python glycan_finder -alignments [alignments] -pos [positives] -neg [negatives]`
