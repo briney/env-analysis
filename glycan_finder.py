@@ -293,18 +293,19 @@ def find_glycans(g, pos_list, neg_list):
 
 					negatives.append(g.glycan_at(neg, env))
 
-				# if it's multiple positions (it's any of them, so basically a giant OR)
+				# if it's multiple positions, then the sequence passes if one or more of the sites isn't glycoslyated
 				if len(neg.split()) > 1:
 
 					glycan_sum = 0
+					neg_count = len(neg.split())
 					for n in neg.split():
 						glycan_sum += g.glycan_at(n, env)
 
 					# if any of the positions are glycosylated, the whole batch of positions is positive
-					if glycan_sum > 0:
-						negatives.append(1)
-					else:
+					if glycan_sum < neg_count:
 						negatives.append(0)
+					else:
+						negatives.append(1)
 
 		else:
 			negatives.append(0)
