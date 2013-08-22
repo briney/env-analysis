@@ -44,3 +44,7 @@ the following file:
 
 would translate to:  
 (136 OR 137) AND 295
+
+## dependencies  
+python >= 2.7  
+biopython
