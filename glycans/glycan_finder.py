@@ -18,7 +18,7 @@ parser.add_argument('-alignments', dest='alignments', default='', help="To save 
 parser.add_argument('-ref', dest='reference', default='', help="The reference sequence, to be used to define the numbering scheme.")
 parser.add_argument('-pos', dest='pos_glycans', required=True, help="The position(s) (using reference sequence numbering) to query for potential glycosylation. Positions may be separated by any sort of whitespace (space, tab, etc). If looking for only a single glycan, use the position as the option. If using multiple glycans, input a file with the positions.")
 parser.add_argument('-neg', dest='neg_glycans', default=True, help="If looking for a pair of glycans in combination, use this flag for a file containing the second glycan(s). The script will search for all of the glycans in this file only among the group of sequences that have all of the glycans in the first (-pos1) file.")
-parser.add_argument('-print_ids', dest='print_ids', default=False, help="Prints two groups of Env IDs: passed and failed.")
+parser.add_argument('-print_ids', dest='print_ids', default=False, action='store_true', help="Prints two groups of Env IDs: passed and failed.")
 args = parser.parse_args()
 
 
@@ -223,8 +223,8 @@ def process():
 		# add the passed and failed to the appropriate var
 		passed += y
 		failed += n
-		passed_list.extend(y_ids)
-		failed_list.extend(n_ids)
+		passed_ids.extend(y_ids)
+		failed_ids.extend(n_ids)
 
 		# if the alignment directory isnt' defined, don't write the alignments to file
 		if args.align_dir == '':
@@ -249,13 +249,13 @@ def process():
 		print ''
 		print 'PASSED:'
 		print '-------'
-		print '\n'.join(passed_list)
+		print '\n'.join(passed_ids)
 		print ''
 		print ''
 		print ''
 		print 'FAILED:'
 		print '-------'
-		print '\n'.join(failed_list)
+		print '\n'.join(failed_ids)
 		print ''
 		print ''
 
@@ -341,7 +341,7 @@ def find_glycans(g, pos_list, neg_list):
 			passed_list.append(env)
 		else:
 			no += 1
-			passed_list,append(env)
+			failed_list.append(env)
 
 	return yes, no, passed_list, failed_list
 
