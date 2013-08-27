@@ -18,6 +18,7 @@ parser.add_argument('-alignments', dest='alignments', default='', help="To save 
 parser.add_argument('-ref', dest='reference', default='', help="The reference sequence, to be used to define the numbering scheme.")
 parser.add_argument('-pos', dest='pos_glycans', required=True, help="The position(s) (using reference sequence numbering) to query for potential glycosylation. Positions may be separated by any sort of whitespace (space, tab, etc). If looking for only a single glycan, use the position as the option. If using multiple glycans, input a file with the positions.")
 parser.add_argument('-neg', dest='neg_glycans', default=True, help="If looking for a pair of glycans in combination, use this flag for a file containing the second glycan(s). The script will search for all of the glycans in this file only among the group of sequences that have all of the glycans in the first (-pos1) file.")
+parser.add_argument('-print_ids', dest='print_ids', default=False, help="Prints two groups of Env IDs: passed and failed.")
 args = parser.parse_args()
 
 
@@ -196,9 +197,11 @@ def process():
 	# set up an alphabetical list of clades, so that we can process them in order.
 	sorted_clades = sorted(envs.keys())
 
-	# set up a list of passed and failed counts
+	# set up a list of passed and failed counts and ids
 	passed = 0
 	failed = 0
+	passed_ids = []
+	failed_ids = []
 
 	# get positions lists
 	pos_list = parse_positives(args.pos_glycans)
@@ -215,11 +218,13 @@ def process():
 		glycans = glycan(ref=ref_seq, input_list=envs[c])
 
 		# determine the presence of glycans at the first position
-		y, n = find_glycans(glycans, pos_list, neg_list)
+		y, n, y_ids, n_ids = find_glycans(glycans, pos_list, neg_list)
 
 		# add the passed and failed to the appropriate var
 		passed += y
 		failed += n
+		passed_list.extend(y_ids)
+		failed_list.extend(n_ids)
 
 		# if the alignment directory isnt' defined, don't write the alignments to file
 		if args.align_dir == '':
@@ -238,6 +243,24 @@ def process():
 			# write the alignment
 			glycans.write_alignment(alignment_file)
 
+	# if the 'print_ids' flag is on, print all of the ids that either passed or failed
+	if args.print_ids:
+		print ''
+		print ''
+		print 'PASSED:'
+		print '-------'
+		print '\n'.join(passed_list)
+		print ''
+		print ''
+		print ''
+		print 'FAILED:'
+		print '-------'
+		print '\n'.join(failed_list)
+		print ''
+		print ''
+
+
+
 	return passed, failed
 
 
@@ -247,6 +270,8 @@ def find_glycans(g, pos_list, neg_list):
 	# set up some vars to hold the output
 	yes = 0
 	no = 0
+	passed_list = []
+	failed_list = []
 
 	# get a list of sequence IDs
 	seq_ids = g.get_ids()
@@ -313,10 +338,12 @@ def find_glycans(g, pos_list, neg_list):
 		# if all the positives are positive and all the negatives are negative, the sequence passes
 		if min(positives) == 1 and max(negatives) == 0:
 			yes += 1
+			passed_list.append(env)
 		else:
 			no += 1
+			passed_list,append(env)
 
-	return yes, no
+	return yes, no, passed_list, failed_list
 
 
 
