@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# filename = pairwise.py
+# filename: pairwise.py
 
 
 from Bio import pairwise2

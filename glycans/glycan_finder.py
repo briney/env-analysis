@@ -19,6 +19,7 @@ parser.add_argument('-ref', dest='reference', default='', help="The reference se
 parser.add_argument('-pos', dest='pos_glycans', required=True, help="The position(s) (using reference sequence numbering) to query for potential glycosylation. Positions may be separated by any sort of whitespace (space, tab, etc). If looking for only a single glycan, use the position as the option. If using multiple glycans, input a file with the positions.")
 parser.add_argument('-neg', dest='neg_glycans', default=True, help="If looking for a pair of glycans in combination, use this flag for a file containing the second glycan(s). The script will search for all of the glycans in this file only among the group of sequences that have all of the glycans in the first (-pos1) file.")
 parser.add_argument('-print_ids', dest='print_ids', default=False, action='store_true', help="Prints two groups of Env IDs: passed and failed.")
+parser.add_argument('-align_type', dest='align_type', default='pairwise', choices=['pairwise', 'msa'], help="Determine the alignment type. Options are 'pairwise' and 'msa'. Defaul is 'pairwise'.")
 args = parser.parse_args()
 
 
@@ -178,9 +179,9 @@ def process():
 		# refine the clade name for clade A and the CRFs
 		if clade in ('A1', 'A2'):
 			clade = 'A'
-		elif clade == '01_AE':
+		elif clade in ['CRF01_AE', '01_AE']:
 			clade = 'AE'
-		elif clade == '02_AG':
+		elif clade in ['CRF02_AG', '02_AG']:
 			clade = 'AG'
 
 		# only look at sequences that are long enough to be relavent
@@ -208,14 +209,22 @@ def process():
 	neg_list = parse_negatives(args.neg_glycans)
 	print_positions(pos_list, neg_list)
 
+	# set up a temporary file path (only used for MSA alignments)
+	temp_alignment_file = os.path.join(os.path.dirname(args.in_file), 'temp_alignment.fasta')
+
 	# iterate through the clades and get scores
 	for c in sorted_clades:
 
 		# let the user know what's up
 		print_clade(c)
 
+		# only process if there are sequences in the clade group
+		if len(envs[c]) < 1:
+			print "No sequences in this clade."
+			continue
+
 		# make the glycan object
-		glycans = glycan(ref=ref_seq, input_list=envs[c])
+		glycans = glycan(ref=ref_seq, input_list=envs[c], align_type=args.align_type, align_file=temp_alignment_file)
 
 		# determine the presence of glycans at the first position
 		y, n, y_ids, n_ids = find_glycans(glycans, pos_list, neg_list)

@@ -2,6 +2,8 @@
 # filename: glycan.py
 
 
+import os
+import msa
 import pairwise
 from multiprocessing import Pool, cpu_count
 
@@ -22,12 +24,14 @@ class glycan():
 	HXB2-specific numbering can be determined for each of the non-HXB2 sequences.'''
 
 
-	def __init__(self, ref='', input_list='', alignment='', pre_aligned=False):
+	def __init__(self, ref='', input_list='', alignment='', align_type='pairwise', pre_aligned=False, align_file=''):
 
 		# if I'm not supplying an alignment, I need to make a new one
 		if not pre_aligned:
 			self.ref_seq = ref
 			self.sequences = input_list
+			self.align_type = align_type
+			self.temp_align_file = align_file
 			self.alignments = []
 			self.make_alignments()
 
@@ -59,16 +63,35 @@ class glycan():
 		ref = self.ref_seq
 		seqs = self.sequences
 
-		# set multiprocessing vars (also set the number of threads to the max number of available processors)
-		procs = cpu_count()
-		pool = Pool(processes=procs)
-		result = []
+		if self.align_type == 'pairwise':
 
-		for seq in seqs:
-			result.append(pool.apply_async(pairwise.alignment, args=(ref, seq)))
+			# set multiprocessing vars (also set the number of threads to the max number of available processors)
+			procs = cpu_count()
+			pool = Pool(processes=procs)
+			result = []
 
-		for r in result:
-			self.alignments.append(r.get())
+			for seq in seqs:
+				result.append(pool.apply_async(pairwise.alignment, args=(ref, seq)))
+
+			for r in result:
+				self.alignments.append(r.get())
+
+		else:
+
+			# start a fasta string for input into MAFFT
+			fasta_string = '>reference\n{0}\n'.format(ref)
+			seq_string = self.format_for_alignment(seqs)
+			fasta_string += seq_string
+
+			# write the fasta string to a temp file (for MAFFT)
+			open(self.temp_align_file, 'w').write(fasta_string)
+
+			# do the alignment
+			self.alignments = msa.alignment(self.temp_align_file)
+
+			# delete the temp file
+			os.remove(self.temp_align_file)
+
 
 
 
