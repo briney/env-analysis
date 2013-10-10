@@ -1,5 +1,5 @@
 #! /usr/bin/python
-# filename: glycan_finder.py
+# filename: conserved_positions.py
 
 
 import os
@@ -8,7 +8,7 @@ import glob
 import argparse
 from Bio import SeqIO
 import multiprocessing
-from glycan import glycan
+from position import position
 
 
 parser = argparse.ArgumentParser("Identifies Env isolates (from the LANL database) that have glycans at a user-defined position.")
@@ -137,10 +137,10 @@ def process_without_alignment():
 		print_clade(clade)
 
 		# make a glycan object with pre-existing alignments
-		gly = glycan(alignment=alignments[clade], pre_aligned=True)
+		pos = position(alignment=alignments[clade], pre_aligned=True)
 
 		# find glycans
-		y, n, y_ids, n_ids = find_glycans(gly, positives, negatives)
+		y, n, y_ids, n_ids = find_positions(pos, positives, negatives)
 
 		# adjust the passed/failed counters
 		passed += y
@@ -224,10 +224,10 @@ def process():
 			continue
 
 		# make the glycan object
-		glycans = glycan(ref=ref_seq, input_list=envs[c], align_type=args.align_type, align_file=temp_alignment_file)
+		pos = position(ref=ref_seq, input_list=envs[c], align_type=args.align_type, align_file=temp_alignment_file)
 
 		# determine the presence of glycans at the first position
-		y, n, y_ids, n_ids = find_glycans(glycans, pos_list, neg_list)
+		y, n, y_ids, n_ids = find_positions(pos, pos_list, neg_list)
 
 		# add the passed and failed to the appropriate var
 		passed += y
@@ -250,7 +250,7 @@ def process():
 			alignment_file = os.path.join(args.align_dir, c.upper() + '.alignment')
 
 			# write the alignment
-			glycans.write_alignment(alignment_file)
+			pos.write_alignment(alignment_file)
 
 	# if the 'print_ids' flag is on, print all of the ids that either passed or failed
 	if args.print_ids:
@@ -265,7 +265,7 @@ def process():
 
 
 
-def find_glycans(g, pos_list, neg_list):
+def find_positions(g, pos_list, neg_list):
 
 	# set up some vars to hold the output
 	yes = 0
@@ -289,15 +289,19 @@ def find_glycans(g, pos_list, neg_list):
 
 				# if it's a single position
 				if len(pos.split()) == 1:
-
-					positives.append(g.glycan_at(pos, env))
+					split_pos = pos.split()[0]
+					res = split_pos[0]
+					num = split_pos[1:]
+					positives.append(g.residue_at(res, num, env))
 
 				# if it's multiple positions (it's any of them, so basically a giant OR)
 				if len(pos.split()) > 1:
 
 					glycan_sum = 0
 					for p in pos.split():
-						glycan_sum += g.glycan_at(p, env)
+						res = p[0]
+						num = p[1:]
+						glycan_sum += g.residue_at(res, num, env)
 
 					# if any of the positions are glycosylated, the whole batch of positions is positive
 					if glycan_sum > 0:
@@ -315,8 +319,10 @@ def find_glycans(g, pos_list, neg_list):
 
 				# if it's a single position
 				if len(neg.split()) == 1:
-
-					negatives.append(g.glycan_at(neg, env))
+					split_neg = pos.split()[0]
+					res = split_neg[0]
+					num = split_neg[1:]
+					negatives.append(g.residue_at(res, num, env))
 
 				# if it's multiple positions, then the sequence passes if one or more of the sites isn't glycoslyated
 				if len(neg.split()) > 1:
@@ -324,7 +330,9 @@ def find_glycans(g, pos_list, neg_list):
 					glycan_sum = 0
 					neg_count = len(neg.split())
 					for n in neg.split():
-						glycan_sum += g.glycan_at(n, env)
+						res = n[0]
+						num = n[1:]
+						glycan_sum += g.residue_at(res, num, env)
 
 					# if any of the positions are glycosylated, the whole batch of positions is positive
 					if glycan_sum < neg_count:
