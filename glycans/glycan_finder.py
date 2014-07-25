@@ -343,6 +343,9 @@ def find_glycans(g, pos_list, neg_list):
 			no += 1
 			failed_list.append(env)
 
+	print 'passed: {0}'.format(yes)
+	print 'failed: {0}'.format(no)
+
 	return yes, no, passed_list, failed_list
 
 

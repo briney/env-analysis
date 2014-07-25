@@ -142,6 +142,14 @@ class glycan():
 		else:
 			return 0
 
+	def residue_at(self, res, pos, env_id):
+		env_seq = self.gapped_dict[env_id][0]
+		ref_seq = self.gapped_dict[env_id][1]
+		primary_pos = self.get_raw_position(int(pos), ref_seq)
+		if env_seq[primary_pos].upper() == res.upper():
+			return 1
+		return 0
+
 
 
 	def write_alignment(self, alignment_file):
